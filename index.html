@@ -72,6 +72,10 @@ ol.st{margin:8px 0;padding-inline-start:24px}ol.st li{margin-bottom:2px}
 .live b{display:block;color:var(--tl)}.live div{font-weight:600;margin:2px 0}.live pre{margin-top:6px}
 ol.st li.on{background:var(--am);color:#14293a;border-radius:6px;padding:0 8px;font-weight:700}
 .ln{display:block;white-space:pre;padding:0 6px;border-radius:4px}.ln.on{background:var(--am);color:#14293a;font-weight:700}
+#a2{width:100%;font:13px/1.6 ui-monospace,Consolas,monospace;background:var(--bg);color:var(--ink);border:2px solid var(--ln);border-radius:10px;padding:10px;direction:ltr}
+.res{margin-top:10px}.res .li{margin:3px 0}.res .ok{color:var(--gr);font-weight:700}.res .no{color:var(--co);font-weight:700}.res .tip{display:block;color:var(--mut);font-weight:400;padding-inline-start:18px}
+.ln.bad{background:var(--co);color:#fff}
+details{border-bottom:1px solid var(--ln);padding:6px 0}summary{cursor:pointer;font-weight:600}details p{margin:6px 0 2px}
 </style>
 </head>
 <body>
@@ -106,6 +110,12 @@ ol.st li.on{background:var(--am);color:#14293a;border-radius:6px;padding:0 8px;f
 </div>
 <aside class="sd"><div class="card" id="info"></div></aside></div>
 
+<div class="card"><h2>تمرين 1: ترتيب الزيارة</h2><p class="sub2" id="q1t"></p>
+<div class="ed"><input id="a1" style="width:min(100%,420px)" placeholder="A C B ..."><button id="c1">افحص</button><button id="s1">الإجابة</button></div><div class="res" id="r1" aria-live="polite"></div></div>
+<div class="card"><h2>تمرين 2: اكتب الـ Pseudo code بتاعك</h2><p class="sub2">اكتب الخوارزمية بأى صياغة (عربى أو إنجليزى) وهنبّهك على الأخطاء الأساسية ونلوّن السطر الغلط. الفحص بيدوّر على العناصر الجوهرية (الهيكل، visited، فحص الهدف، التكلفة) ومش بيفهم كل صياغة، فلو اتنبهت لغلط وانت شايف إنك صح قارن بالحل النموذجى.</p>
+<textarea id="a2" rows="9" aria-label="Pseudo code"></textarea>
+<div class="ed" style="margin-top:8px"><button id="c2">افحص</button><button id="s2">الحل النموذجى</button></div><div class="res" id="r2" aria-live="polite"></div></div>
+<div class="card"><h2>أسئلة شائعة ومقالى</h2><div id="faq"></div></div>
 <div class="card sc">
   <h2>مقارنة سريعة</h2>
   <table>
@@ -283,7 +293,7 @@ function draw(s){
   row('fr',nm,s.fr,false);row('fr2','طابور الهدف',s.fr2,true);
 }
 function reset(){
-  stop();fix();TP={};TP2=null;gen=ALG[cur].g();
+  stop();fix();TP={};TP2=null;q1();gen=ALG[cur].g();
   draw({cls:{},fr:[],par:{},note:'دوس «خطوة» أو «تشغيل» عشان نبدأ. الهدف حاليًا: '+goal+'.'});
 }
 function step(){
@@ -435,11 +445,79 @@ function hl(s){
  const c=document.createElement('pre');c.textContent=m[1].map(i=>lns[i]?lns[i].textContent:'').join('\n');
  lv.append(a,n,c);
 }
+const FRN={bfs:'الطابور',dfs:'المكدس (الأعلى أولًا)',ids:'المكدس',ucs:'طابور الأولوية'};
+function q1(){
+ $('r1').innerHTML='';
+ $('q1t').textContent=cur=='bi'?'التمرين ده متاح لـ BFS وDFS وIDS وUCS بس.':'اكتب ترتيب العقد اللى '+ALG[cur].t+' بيسحبها (يزورها) من '+S+' لحد الهدف '+goal+' على الرسم اللى فوق، بمسافة بين كل اسم. لو جارين متساويين فى الأولوية رتّبهم أبجديًا.'+(cur=='ids'?' (فى آخر دورة، اللى لقى فيها الهدف)':'');
+ $('a1').disabled=$('c1').disabled=$('s1').disabled=cur=='bi';
+}
+function seqOf(){
+ const a=TP,b=TP2,g=ALG[cur].g();let prev=null,out=[],n=0;
+ while(n++<5000){const r=g.next();if(r.done)break;const s=r.value;s.ph=phase(s,prev);
+  if(s.ph=='init'&&cur=='ids')out=[];
+  if(s.ph=='pop')out.push({n:s.cur,fr:prev?prev.fr:[],note:s.note});
+  prev=s;if(s.path)break}
+ TP=a;TP2=b;return out;
+}
+$('c1').onclick=()=>{
+ const exp=seqOf(),names=exp.map(e=>e.n),r=$('r1'),tk=$('a1').value.split(/[ ,،>←→–-]+/).filter(Boolean);
+ r.innerHTML='';if(!tk.length){r.textContent='اكتب الترتيب الأول.';return}
+ let i=0;while(i<tk.length&&i<names.length&&tk[i].toLowerCase()==names[i].toLowerCase())i++;
+ const m=document.createElement('div'),t=document.createElement('span');t.className='tip';
+ if(i==names.length&&tk.length==names.length){m.className='ok';m.textContent='إجابتك صح: '+names.join(' ← ')}
+ else if(i==names.length){m.className='no';m.textContent='زودت عقد بعد الهدف. الخوارزمية بتقف أول ما تسحب '+goal+'.'}
+ else if(i==tk.length){m.className='no';m.textContent='إجابتك صح لحد دلوقتى بس ناقصة. العقدة اللى بعد '+tk[i-1]+' هى '+names[i]+'.';t.textContent=exp[i].note}
+ else{m.className='no';m.textContent='الغلط فى العقدة رقم '+(i+1)+': انت كتبت '+tk[i]+' والصح '+names[i]+'.';
+  t.textContent='وقتها '+FRN[cur]+' كان: ['+exp[i].fr.join('، ')+']، فاللى هيتسحب هو '+names[i]+'. '+exp[i].note}
+ r.append(m,t);
+};
+$('s1').onclick=()=>{const r=$('r1');r.textContent='الترتيب الصح: '+seqOf().map(e=>e.n).join(' ← ')};
+const Q=/queue|dequeue|popleft|fifo|طابور/,K=/stack|push|lifo|مكدس|recurs|استدعاء/,V=/visited|closed|explored|seen|reached|marked|اتزار|مزار|زرنا/,NB=/neighbo|child|adjacent|adj|succ|جار|جيران|أبناء|ابناء/,LP=/for|each|while|loop|كل|كرر/,FL=/fail|none|null|no path|not found|مفيش|فشل/,PR=/parent|prev|came|path|مسار|الأب/,DQ=/dequeue|popleft|pop|take|remove|سحب|اسحب|خد|شيل/;
+const rx=re=>L=>L.map((l,i)=>re.test(l)?i:-1).filter(i=>i>=0);
+const gl=L=>L.findIndex((l,i)=>i>0&&/goal|هدف/.test(l)&&/if |لو|==|equals|يساوى|= /.test(l)&&!/<-/.test(l));
+const cV=[t=>V.test(t),'visited / closed','ناقص مجموعة العقد اللى اتزارت، من غيرها ممكن يلف فى دايرة ويزور نفس العقدة كذا مرة.'],
+ cN=[(t,L)=>L.some(l=>LP.test(l)&&NB.test(l)),'اللفة على الجيران','مش لاقى لفة على جيران العقدة (for each neighbor).'],
+ cG=[(t,L)=>gl(L)>=0,'فحص الهدف','ناقص سطر بيفحص هل العقدة الحالية هى الهدف (if node = goal).'],
+ cF=[t=>FL.test(t),'إرجاع فشل لو مالقيناش حل','ناقص return failure لما الطابور أو المكدس يفضى من غير ما نلاقى الهدف.'],
+ cP=[t=>PR.test(t),'تسجيل الأب (parent)','ناقص تسجيل مين جاب كل عقدة عشان ترجّع المسار.'],
+ cO=[(t,L)=>{const g=gl(L),d=L.findIndex(l=>DQ.test(l));return g<0||d<0||g>d},'فحص الهدف بعد السحب','بتفحص الهدف قبل ما تسحب العقدة من الطابور/المكدس.',L=>{const g=gl(L);return g<0?[]:[g]}];
+const RULES={
+ bfs:[[t=>Q.test(t),'استخدام طابور (Queue)','BFS لازم طابور FIFO.'],[t=>!/stack|lifo|مكدس/.test(t),'مفيش Stack','فيه سطور بتستخدم Stack. BFS بيسحب الأقدم أولًا (FIFO) مش الأحدث.',rx(/stack|lifo|مكدس/)],[t=>/dequeue|popleft|pop[(]0|front|first|أول|الأقدم|poll/.test(t),'السحب من أول الطابور','مش واضح إنك بتسحب من أول الطابور (dequeue / popleft).'],cV,cN,cG,cO,cF,cP],
+ dfs:[[t=>K.test(t),'استخدام Stack (أو recursion)','DFS لازم Stack أو استدعاء ذاتى.'],[t=>!Q.test(t),'مفيش Queue','فيه سطور بتستخدم Queue. DFS بيسحب الأحدث أولًا (LIFO)، وبالطابور هيطلع BFS.',rx(Q)],cV,cN,cG,cO,cF,cP],
+ ids:[[t=>/limit|depth|عمق|حد/.test(t),'متغير حد العمق','IDS محتاج limit/depth.'],[t=>/for.*limit|limit *(<-|=|[+])|[+] *1|increase|increment|زود|زوّد|range|[.]{3}/.test(t),'زيادة الحد كل دورة','مش واضح إنك بتزود الحد بعد كل دورة (limit = 0, 1, 2, ...).'],[t=>/limit *(=|==|<=|<) *0|depth *(>=|>|==) *limit|cutoff|limit *- *1/.test(t),'شرط الوقف عند حد العمق','ناقص شرط الوقف لما توصل لحد العمق (limit = 0 أو depth ≥ limit).'],[t=>/dls|dfs|depth.limited|limited|recurs|stack|مكدس|استدعاء/.test(t),'تشغيل DFS محدود العمق','ناقص استدعاء DLS (DFS بحد عمق) جوه لفة الحدود.'],[t=>!Q.test(t),'مفيش Queue','IDS مبنى على DFS (Stack/recursion) مش BFS.',rx(Q)],cG,cF],
+ bi:[[t=>/qf|q_f|forward|from start|من البداية|q1|queue1/.test(t)&&/qb|q_b|backward|reverse|from goal|من الهدف|q2|queue2/.test(t),'بحثين: من البداية ومن الهدف','ناقص إن فيه بحثين (طابورين): واحد من start وواحد من goal.'],[t=>Q.test(t),'استخدام طوابير BFS','كل اتجاه محتاج طابور BFS.'],[t=>/meet|intersect|common|other|opposite|both|اتقابل|تقابل|مشترك|تقاطع/.test(t),'شرط التقابل','ناقص شرط التقابل: لو الجار اتزار من الاتجاه التانى يبقى لقينا نقطة تقابل.'],[t=>/alternat|swap|switch|turn|بدّل|بدل|بالتناوب|for .* in/.test(t),'التبديل بين الاتجاهين','مش واضح إنك بتبدّل بين البحثين كل خطوة.'],[t=>/reverse|join|combine|concat|[+]|اربط|ادمج|عكس/.test(t),'ربط المسارين','ناقص ربط مسار البداية بمسار الهدف (معكوس) لما يتقابلوا.'],cV,cF],
+ ucs:[[t=>/priority|heap|pq|min|sorted|sort|cheapest|lowest|أولوية|الأقل|الأرخص|رتب/.test(t),'طابور أولوية','UCS لازم طابور أولوية بيسحب أقل تكلفة (g) أول.'],[t=>!/fifo|popleft/.test(t),'مفيش سحب FIFO','سحب FIFO بيحوله BFS. لازم تسحب الأرخص.',rx(/fifo|popleft/)],[t=>/(g|cost|تكلفة|dist)[a-z_]* *([+]|<-.*[+]|=.*[+])|[+] *(w|cost|weight|step|edge|تكلفة)|g *[+]/.test(t),'جمع التكلفة','ناقص جمع التكلفة: تكلفة الجار = تكلفة العقدة (g) + تكلفة الخط.'],[(t,L)=>{const g=gl(L),n=L.findIndex(l=>LP.test(l)&&NB.test(l));return g<0||n<0||g<n},'فحص الهدف وقت السحب','فحص الهدف لازم يكون وقت السحب من الطابور قبل لفة الجيران، مش وقت الإضافة، وإلا ممكن ترجّع مسار مش الأرخص.',L=>{const g=gl(L);return g<0?[]:[g]}],cV,cN,cG,cF,cP]
+};
+$('c2').onclick=()=>{
+ const src=$('a2').value,r=$('r2');r.innerHTML='';
+ if(src.trim().length<20){r.textContent='اكتب الخوارزمية الأول، كام سطر على الأقل.';return}
+ const L=src.split('\n'),Ll=L.map(x=>x.toLowerCase()),t=Ll.join('\n'),fl=new Set(),box=document.createElement('div'),rs=RULES[cur];let pass=0;
+ rs.forEach(([f,ti,tip,fx])=>{const ok=f(t,Ll);if(ok)pass++;else if(fx)fx(Ll).forEach(i=>fl.add(i));
+  const d=document.createElement('div'),b=document.createElement('span');d.className='li';b.className=ok?'ok':'no';b.textContent=(ok?'✔ ':'✘ ')+ti;d.appendChild(b);
+  if(!ok){const s=document.createElement('span');s.className='tip';s.textContent=tip;d.appendChild(s)}box.appendChild(d)});
+ const h=document.createElement('b');h.textContent=pass==rs.length?'كل العناصر الأساسية موجودة. قارن بالحل النموذجى للتفاصيل.':'النتيجة: '+pass+' من '+rs.length+'. راجع العناصر اللى عليها ✘ والسطور الحمرا.';
+ r.append(h,box);const pre=document.createElement('pre');
+ L.forEach((l,i)=>{const s=document.createElement('span');s.className='ln'+(fl.has(i)?' bad':'');s.textContent=l||' ';pre.appendChild(s)});r.appendChild(pre);
+};
+$('s2').onclick=()=>{const r=$('r2');r.innerHTML='';const pre=document.createElement('pre');pre.textContent=DOC[cur].pc;r.appendChild(pre)};
+const FAQ={
+ bfs:[['ليه BFS بيضمن أقل عدد خطوات بس مش أرخص تكلفة؟','لأنه بيزور العقد مستوى مستوى وبيعتبر كل خط خطوة واحدة بغض النظر عن تكلفته. مسار من خطوتين تكلفته 20 هيتلاقى قبل مسار من 3 خطوات تكلفته 5. للأرخص استخدم UCS.'],['إيه مشكلة BFS الأساسية؟','الذاكرة: بيخزن كل عقد المستوى فى الطابور، فالذاكرة O(b^d) وبتكبر بسرعة. لو b = 10 وd = 6 ممكن توصل لملايين العقد.'],['(مقالى) اشرح خطوات BFS وأثبت إنه بيوصل لأقصر مسار.','نحط البداية فى الطابور، ونسحب الأقدم، ونضيف جيرانه الجداد فى الآخر. بما إن الطابور FIFO، كل عقد المستوى k بتتسحب قبل أى عقدة فى المستوى k+1. فأول مرة نكتشف فيها الهدف تكون فى أقل مستوى ممكن، فالمسار أقصر مسار من حيث عدد الخطوات.']],
+ dfs:[['ليه DFS ممكن مايلاقيش حل؟','فى رسم لانهائى أو فيه دواير من غير visited، بيغوص فى فرع ومبيرجعش. مع visited وفى رسم محدود بيلاقى الحل لو موجود.'],['ليه ذاكرة DFS قليلة؟','لأنه بيخزن مسار واحد وجيران كل عقدة عليه بس: O(b·m)، بدل مستوى كامل زى BFS.'],['(مقالى) إمتى DFS أحسن من BFS وإمتى أسوأ؟','أحسن: لما الذاكرة محدودة، أو الحلول كتيرة وعميقة، أو لفحص الاتصال والترتيب الطوبولوجى. أسوأ: لما عايز أقصر مسار، أو الهدف قريب من البداية وفى فرع تانى، أو الرسم عميق جدًا. السبب إنه بيلتزم بفرع للآخر ومبيراعيش القرب.']],
+ ids:[['ليه IDS مش مكلف مع إنه بيعيد الزيارة؟','لأن أغلب العقد فى آخر مستوى. عدد العقد فى المستويات الفاتتة صغير جدًا بالنسبة له، فالتكلفة الإضافية نسبتها قليلة، والوقت يفضل O(b^d).'],['إيه الفرق بين IDS وDLS؟','DLS هو DFS بحد عمق ثابت، ممكن يفوّت الهدف لو الحد صغير. IDS بيكرر DLS بحدود 0 و 1 و 2... لحد ما يلاقى الهدف، فبيبقى كامل وبيرجّع أقل عمق.'],['(مقالى) ليه IDS بياخد ميزة BFS وDFS مع بعض؟','من DFS بياخد الذاكرة القليلة O(b·d) لأنه بيحتفظ بمسار واحد. ومن BFS بياخد الكمال وأقل عمق، لأنه بيفحص عمق بعد عمق وأول عمق يلاقى فيه الهدف هو الأقل. الثمن: تكرار الزيارة.']],
+ bi:[['ليه Bidirectional أسرع؟','كل بحث بيوصل لعمق d/2 بس، وb^(d/2)+b^(d/2) أصغر بكتير من b^d. مثلًا b=10 وd=6: حوالى 2000 عقدة بدل مليون.'],['إمتى مينفعش أستخدمه؟','لما الهدف مش معروف بالتحديد (مجموعة أهداف)، أو لما مينفعش تمشى عكس الاتجاه (الأفعال مش قابلة للعكس).'],['(مقالى) إزاى نضمن إن المسار اللى لقيناه هو الأقصر؟','أول تقابل بيدى مسار قريب من الأقصر؛ والأضمن إننا نكمل لحد ما نخلص المستوى الحالى ونختار أقصر مسار بين نقط التقابل. ولازم الخطوات متساوية التكلفة.']],
+ ucs:[['الفرق بين UCS وDijkstra؟','نفس الفكرة تقريبًا. UCS بيقف أول ما يسحب الهدف، وDijkstra الكلاسيك بيحسب أقصر مسار لكل العقد.'],['ليه بنفحص الهدف وقت السحب مش وقت الإضافة؟','لأن وقت الإضافة ممكن يكون لسه فى طريق أرخص مجاش دوره. لما الهدف يتسحب مفيش أى طريق أرخص فى الطابور.'],['ينفع UCS مع تكاليف سالبة أو صفر؟','سالبة لأ، بتبوّظ الضمان (استخدم Bellman-Ford). صفر ممكن بس ممكن يلف لو فيه دواير من غير visited.'],['(مقالى) قارن UCS بـ BFS.','BFS بيرتب بعدد الخطوات وUCS بالتكلفة g. لو كل التكاليف متساوية UCS بيتصرف زى BFS. UCS بيضمن الأرخص، وBFS بيضمن الأقل خطوات فقط. UCS محتاج طابور أولوية فوقته O(log n) لكل عملية.']]
+};
+const COMMON=[['(مقالى) قارن بين الخوارزميات الخمسة من حيث الكمال والمثالية والوقت والذاكرة.','BFS: كامل، أقل خطوات، وقت وذاكرة O(b^d). DFS: مش كامل ومش مثالى، وقت O(b^m) وذاكرة قليلة O(b·m). IDS: كامل، أقل خطوات، وقت O(b^d) وذاكرة O(b·d). Bidirectional: كامل وأقل خطوات، وقت وذاكرة O(b^(d/2)). UCS: كامل ومثالى بالتكلفة، وقت وذاكرة O(b^(1+C*/ε)).'],['إيه الفرق بين الكمال (Complete) والمثالية (Optimal)؟','كامل: لو فيه حل هيلاقيه. مثالى: الحل اللى يلاقيه هو الأفضل (أقصر أو أرخص).'],['ليه لازم visited؟','عشان فى الرسوم ممكن توصل لنفس العقدة بأكتر من طريق وفيه دواير. من غيره بتتكرر الزيارات وممكن الخوارزمية متخلصش.']];
+function exInit(){
+ q1();$('r2').innerHTML='';$('a1').value='';
+ const f=$('faq');f.innerHTML='';
+ [...FAQ[cur],...COMMON].forEach(([q,a])=>{const d=document.createElement('details'),s=document.createElement('summary'),p=document.createElement('p');s.textContent=q;p.textContent=a;d.append(s,p);f.appendChild(d)});
+}
 const tabs=document.getElementById('tabs');
 ids_.forEach(k=>{const b=document.createElement('button');b.setAttribute('role','tab');b.textContent=ALG[k].t;
-  b.onclick=()=>{cur=k;[...tabs.children].forEach(x=>x.setAttribute('aria-selected',x==b));info();reset()};
+  b.onclick=()=>{cur=k;[...tabs.children].forEach(x=>x.setAttribute('aria-selected',x==b));info();reset();exInit()};
   b.setAttribute('aria-selected',k==cur);tabs.appendChild(b)});
-info();reset();
+info();reset();exInit();
 </script>
 </body>
 </html>
