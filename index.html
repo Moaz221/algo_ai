@@ -12,7 +12,7 @@ html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:Cairo,Tahoma,sans-serif;line-height:1.8;
 background-image:radial-gradient(var(--ln) 1px,transparent 1px);background-size:22px 22px}
-.w{max-width:960px;margin:0 auto;padding:20px 16px 48px}
+.w{max-width:1360px;margin:0 auto;padding:20px 16px 48px}
 h1{font-size:clamp(1.8rem,5vw,2.8rem);font-weight:800;margin:.4em 0 .1em;line-height:1.3}
 .sub{color:var(--mut);margin:0 0 18px;max-width:60ch}
 .tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px}
@@ -57,6 +57,21 @@ ol.st{margin:8px 0;padding-inline-start:24px}ol.st li{margin-bottom:2px}
 .why{background:var(--bg);border-inline-start:5px solid var(--tl);padding:8px 12px;border-radius:8px;margin-top:10px}
 .g2 b{display:block;font-size:1.05rem}.g2 small{color:var(--mut);display:block;line-height:1.6}
 .spd{display:flex;align-items:center;gap:8px;margin-inline-start:auto;color:var(--mut);font-size:.9rem}.spd input{width:150px}
+.ed{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}.ed label{color:var(--mut);font-size:.9rem}
+.ed button{font:inherit;font-weight:600;border:2px solid var(--ln);background:var(--bg);color:var(--ink);border-radius:8px;padding:0 12px;cursor:pointer}
+.ed button[aria-pressed=true]{background:var(--tl);border-color:var(--tl);color:#fff}
+.ed input{font:inherit;width:92px;padding:2px 8px;border:2px solid var(--ln);border-radius:8px;background:var(--bg);color:var(--ink)}
+.hint{color:var(--mut);font-size:.9rem;margin:0 0 8px;min-height:1.7em}
+#tree .n{cursor:default}.sub2{color:var(--mut);margin:0 0 8px;font-size:.92rem}
+.lay{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;align-items:start}
+.mn,.sd{min-width:0}
+.sd{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);max-height:calc(100vh - 24px);overflow-y:auto;border-radius:14px}
+.sd .card{margin-top:14px}
+@media (max-width:900px){.lay{grid-template-columns:1fr}.sd{position:static;max-height:none;overflow:visible}}
+.live{position:sticky;top:0;z-index:2;background:var(--sf);border:3px solid var(--am);border-radius:12px;padding:8px 12px;margin-top:12px}
+.live b{display:block;color:var(--tl)}.live div{font-weight:600;margin:2px 0}.live pre{margin-top:6px}
+ol.st li.on{background:var(--am);color:#14293a;border-radius:6px;padding:0 8px;font-weight:700}
+.ln{display:block;white-space:pre;padding:0 6px;border-radius:4px}.ln.on{background:var(--am);color:#14293a;font-weight:700}
 </style>
 </head>
 <body>
@@ -65,11 +80,15 @@ ol.st{margin:8px 0;padding-inline-start:24px}ol.st li{margin-bottom:2px}
 <p class="sub">اختار خوارزمية، دوس «خطوة» أو «تشغيل» وتابع العقدة الحالية والطابور. تقدر كمان تدوس على أي عقدة (غير A) تخليها الهدف.</p>
 <div class="tabs" role="tablist" id="tabs"></div>
 
+<div class="lay"><div class="mn">
 <div class="card">
   <div class="ctl">
     <button id="bStep">خطوة</button><button id="bPlay">تشغيل</button><button id="bReset" class="s">إعادة</button>
     <div class="spd"><span>أبطأ</span><input type="range" id="spd" min="1" max="10" value="3" aria-label="سرعة التشغيل"><span>أسرع</span><b id="spv"></b></div>
   </div>
+  <div class="ed" id="modes" role="group" aria-label="وضع التعديل"></div>
+  <div class="ed"><label>اسم العقدة <input id="nm" maxlength="4" placeholder="A أو 7"></label><label>تكلفة الخط <input id="cs" type="number" min="0.1" step="any" value="1"></label><button id="bDef">الشكل الأصلى</button><button id="bBlank">شكل جديد</button></div>
+  <p class="hint" id="hint" aria-live="polite"></p>
   <svg id="svg" viewBox="0 0 640 340" role="img" aria-label="رسم الشبكة التفاعلي"></svg>
   <div class="lg">
     <span><i style="background:var(--am)"></i>في الطابور/المكدس</span>
@@ -83,7 +102,9 @@ ol.st{margin:8px 0;padding-inline-start:24px}ol.st li{margin-bottom:2px}
   <div class="fr" id="fr2"></div>
 </div>
 
-<div class="card" id="info"></div>
+<div class="card"><h2>شجرة البحث</h2><p class="sub2">الشجرة بتتبنى مع كل خطوة: الجذر هو نقطة البداية، وتحته كل عقدة اتكشفت منه، والرقم على الخط هو التكلفة. فى Bidirectional هتلاقى شجرتين، واحدة من البداية وواحدة من الهدف، ولما يتقابلوا المسار بيتلون بالأخضر.</p><svg id="tree" viewBox="0 0 640 160" role="img" aria-label="شجرة البحث"></svg></div>
+</div>
+<aside class="sd"><div class="card" id="info"></div></aside></div>
 
 <div class="card sc">
   <h2>مقارنة سريعة</h2>
@@ -100,18 +121,18 @@ ol.st{margin:8px 0;padding-inline-start:24px}ol.st li{margin-bottom:2px}
 </div>
 
 <script>
-const P={A:[60,170],B:[190,60],C:[190,170],D:[190,285],E:[330,50],F:[340,150],G:[340,250],H:[480,110],I:[490,260],J:[590,180]};
-const ED=[['A','B',4],['A','C',1],['A','D',3],['B','E',2],['B','F',5],['C','F',6],['C','G',2],['D','G',1],['E','H',3],['F','H',1],['G','I',4],['H','J',2],['I','J',1]];
-const adj={};Object.keys(P).forEach(k=>adj[k]=[]);
-ED.forEach(([a,b,w])=>{adj[a].push([b,w]);adj[b].push([a,w])});
-Object.values(adj).forEach(l=>l.sort((x,y)=>x[0]<y[0]?-1:1));
-const S='A';let goal='J';
+let P={A:[60,170],B:[190,60],C:[190,170],D:[190,285],E:[330,50],F:[340,150],G:[340,250],H:[480,110],I:[490,260],J:[590,180]};
+let ED=[['A','B',4],['A','C',1],['A','D',3],['B','E',2],['B','F',5],['C','F',6],['C','G',2],['D','G',1],['E','H',3],['F','H',1],['G','I',4],['H','J',2],['I','J',1]];
+const DP=JSON.parse(JSON.stringify(P)),DE=JSON.parse(JSON.stringify(ED));
+let adj={},S='A',goal='J';
+function rebuildAdj(){adj={};Object.keys(P).forEach(k=>adj[k]=[]);ED.forEach(([a,b,w])=>{adj[a].push([b,w]);adj[b].push([a,w])});Object.values(adj).forEach(l=>l.sort((x,y)=>x[0].localeCompare(y[0],undefined,{numeric:true})))}
+rebuildAdj();
 
 const chain=(par,n)=>{const r=[];while(n){r.unshift(n);n=par[n]}return r};
-const mk=()=>{const cls={};return{cls,y:(cur,fr,note,x={})=>({cur,cls:{...cls},fr:fr.slice(),note,...x})}};
+const mk=()=>{TP2=null;const cls={};return{cls,y:(cur,fr,note,x={})=>({cur,cls:{...cls},fr:fr.slice(),note,par:{...TP},par2:TP2?{...TP2}:null,...x})}};
 
 function* bfs(){
-  const {cls,y}=mk(),par={},seen={[S]:1};let q=[S];cls[S]='f';
+  const {cls,y}=mk(),par={},seen={[S]:1};TP=par;let q=[S];cls[S]='f';
   yield y(null,q,'بنبدأ من '+S+' وبنحطه في الطابور (Queue).');
   while(q.length){
     const u=q.shift();cls[u]='c';
@@ -124,7 +145,7 @@ function* bfs(){
   yield y(null,[],'الطابور فضي ومالقيناش الهدف.');
 }
 function* dfs(){
-  const {cls,y}=mk(),par={};let st=[{n:S,p:null}];cls[S]='f';
+  const {cls,y}=mk(),par={};TP=par;let st=[{n:S,p:null}];cls[S]='f';
   const sh=()=>st.map(e=>e.n).reverse();
   yield y(null,sh(),'بنبدأ من '+S+' وبنحطه في المكدس (Stack).');
   while(st.length){
@@ -134,27 +155,27 @@ function* dfs(){
     yield y(u,sh(),'سحبنا '+u+' من فوق المكدس (الأحدث الأول) وبنغوص فيه.');
     if(u==goal){yield y(u,sh(),'وصلنا للهدف '+goal+'! المسار ممكن يطلع مش الأقصر.',{path:chain(par,u)});return}
     const add=[];
-    for(const[v]of[...adj[u]].reverse())if(cls[v]!='c'){st.push({n:v,p:u});cls[v]='f';add.push(v)}
+    for(const[v]of[...adj[u]].reverse())if(cls[v]!='c'){st.push({n:v,p:u});par[v]=u;cls[v]='f';add.push(v)}
     yield y(u,sh(),add.length?'زقينا الجيران فوق المكدس، وأبجديًا '+[...add].reverse()[0]+' هيتسحب الأول.':u+' طريق مسدود، هنرجع (Backtrack).');
   }
   yield y(null,[],'المكدس فضي ومالقيناش الهدف.');
 }
 function* ids(){
-  for(let L=0;L<=8;L++){
-    const {cls,y}=mk();let st=[{n:S,d:0,path:[S]}];cls[S]='f';
+  for(let L=0;L<=Math.max(8,Object.keys(P).length);L++){
+    const {cls,y}=mk(),par={};TP=par;let st=[{n:S,d:0,path:[S]}];cls[S]='f';
     yield y(null,[S+'@0'],'دورة جديدة بحد عمق = '+L+'. بنعمل DFS ومنعدّيش العمق ده.');
     while(st.length){
-      const{n:u,d,path}=st.pop();cls[u]='c';
+      const{n:u,d,path}=st.pop();cls[u]='c';par[u]=path.length>1?path[path.length-2]:null;
       const sh=()=>st.map(e=>e.n+'@'+e.d).reverse();
       yield y(u,sh(),'زرنا '+u+' في عمق '+d+' (الحد '+L+').');
       if(u==goal){yield y(u,sh(),'لقينا الهدف '+goal+' في عمق '+d+'، ده أقل عمق ممكن.',{path});return}
-      if(d<L)for(const[v]of[...adj[u]].reverse())if(!path.includes(v)){st.push({n:v,d:d+1,path:[...path,v]});cls[v]='f'}
+      if(d<L)for(const[v]of[...adj[u]].reverse())if(!path.includes(v)){st.push({n:v,d:d+1,path:[...path,v]});par[v]=u;cls[v]='f'}
     }
     yield y(null,[],'خلصنا عمق '+L+' من غير هدف. هنزود الحد ونبدأ من الأول.');
   }
 }
 function* bi(){
-  const {cls,y}=mk(),pf={},pb={},sf={[S]:1},sb={[goal]:1};let qf=[S],qb=[goal];
+  const {cls,y}=mk(),pf={},pb={},sf={[S]:1},sb={[goal]:1};TP=pf;TP2=pb;let qf=[S],qb=[goal];
   cls[S]='f';cls[goal]='b';
   const run=(fwd)=>{
     const q=fwd?qf:qb,seen=fwd?sf:sb,oth=fwd?sb:sf,par=fwd?pf:pb;
@@ -177,18 +198,18 @@ function* bi(){
   yield y(null,[],'مفيش مسار.');
 }
 function* ucs(){
-  const {cls,y}=mk(),par={},done={};let pq=[{n:S,g:0,p:null}];cls[S]='f';
+  const {cls,y}=mk(),par={},done={},best={};TP=par;let pq=[{n:S,g:0,p:null}];cls[S]='f';
   const sh=()=>pq.map(e=>e.n+'('+e.g+')');
   yield y(null,sh(),'الطابور هنا بيترتب بالتكلفة g، والأرخص بيتسحب الأول.');
   while(pq.length){
     pq.sort((a,b)=>a.g-b.g||(a.n<b.n?-1:1));
     const{n:u,g,p}=pq.shift();
-    if(done[u])continue;
+    if(u in done)continue;
     done[u]=g;par[u]=p;cls[u]='c';
     yield y(u,sh(),'سحبنا '+u+' لأنه الأرخص (تكلفته '+g+').');
     if(u==goal){yield y(u,sh(),'وصلنا للهدف '+goal+' بأقل تكلفة = '+g+'.',{path:chain(par,u)});return}
     const add=[];
-    for(const[v,w]of adj[u])if(!done[v]){pq.push({n:v,g:g+w,p:u});cls[v]='f';add.push(v+'='+(g+w))}
+    for(const[v,w]of adj[u])if(!(v in done)){pq.push({n:v,g:g+w,p:u});cls[v]='f';add.push(v+'='+(g+w));if(!(v in best)||g+w<best[v]){best[v]=g+w;par[v]=u}}
     pq.sort((a,b)=>a.g-b.g||(a.n<b.n?-1:1));
     yield y(u,sh(),add.length?'حسبنا التكلفة للجيران: '+add.join('، '):'مفيش جيران جداد.');
   }
@@ -216,26 +237,28 @@ const ids_=Object.keys(ALG);let cur='bfs',gen,last,timer=null;
 
 const svg=document.getElementById('svg'),NS='http://www.w3.org/2000/svg';
 const el=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);p&&p.appendChild(e);return e};
-const edgeEl={},nodeEl={};let tgS,tgG;
+let edgeEl={},nodeEl={},tgS,tgG;
+function drawGraph(){svg.innerHTML='';edgeEl={};nodeEl={};
 ED.forEach(([a,b,w])=>{
-  edgeEl[a+b]=el('line',{class:'e',x1:P[a][0],y1:P[a][1],x2:P[b][0],y2:P[b][1]},svg);
-  const t=el('text',{class:'ew',x:(P[a][0]+P[b][0])/2,y:(P[a][1]+P[b][1])/2+4},svg);t.textContent=w;
+  edgeEl[a+'|'+b]=el('line',{class:'e',x1:P[a][0],y1:P[a][1],x2:P[b][0],y2:P[b][1]},svg);
+  const t=el('text',{class:'ew',x:(P[a][0]+P[b][0])/2,y:(P[a][1]+P[b][1])/2+4},svg);t.textContent=w;[t,edgeEl[a+'|'+b]].forEach(x=>x.onclick=()=>edgeClick(a,b));
 });
 for(const k in P){
   const g=el('g',{class:'n',tabindex:0,role:'button','aria-label':'عقدة '+k},svg);
   el('circle',{cx:P[k][0],cy:P[k][1],r:21},g);
   const t=el('text',{x:P[k][0],y:P[k][1]},g);t.textContent=k;
   nodeEl[k]=g;
-  const set=()=>{if(k!=S&&k!=goal){goal=k;reset()}};
+  const set=()=>nodeClick(k);
   g.onclick=set;g.onkeydown=e=>{if(e.key=='Enter'||e.key==' '){e.preventDefault();set()}};
 }
 const tg=(c)=>{const t=el('text',{class:'tg',fill:c},svg);return t};
 tgS=tg('var(--gr)');tgG=tg('var(--co)');
 tgS.textContent='بداية';
-tgG.textContent='هدف';
+tgG.textContent='هدف';}
+drawGraph();
 
 function draw(s){
-  last=s;
+  last=s;drawTree(s);hl(s);
   const cls=s.cls||{},pn=s.path||[];
   for(const k in nodeEl){
     let c='n';
@@ -246,7 +269,7 @@ function draw(s){
   }
   for(const [a,b] of ED){
     const on=pn.some((n,i)=>i&&((pn[i-1]==a&&n==b)||(pn[i-1]==b&&n==a)));
-    edgeEl[a+b].setAttribute('class','e'+(on?' p':''));
+    edgeEl[a+'|'+b].setAttribute('class','e'+(on?' p':''));
   }
   tgS.setAttribute('x',P[S][0]);tgS.setAttribute('y',P[S][1]+38);
   tgG.setAttribute('x',P[goal][0]);tgG.setAttribute('y',P[goal][1]+38);
@@ -260,14 +283,14 @@ function draw(s){
   row('fr',nm,s.fr,false);row('fr2','طابور الهدف',s.fr2,true);
 }
 function reset(){
-  stop();gen=ALG[cur].g();
-  draw({cls:{},fr:[],note:'دوس «خطوة» أو «تشغيل» عشان نبدأ. الهدف حاليًا: '+goal+'.'});
+  stop();fix();TP={};TP2=null;gen=ALG[cur].g();
+  draw({cls:{},fr:[],par:{},note:'دوس «خطوة» أو «تشغيل» عشان نبدأ. الهدف حاليًا: '+goal+'.'});
 }
 function step(){
   if(!gen)return false;
   const r=gen.next();
   if(r.done){stop();gen=null;return false}
-  draw(r.value);
+  r.value.ph=phase(r.value,last);draw(r.value);
   if(r.value.path){stop();gen=null;return false}
   return true;
 }
@@ -324,8 +347,93 @@ function info(){
    '<div><span>بتستخدمه إمتى</span><small style="color:var(--ink)">'+a.u+'</small></div><div><span>عيبه</span><small style="color:var(--ink)">'+a.w+'</small></div></div>'+
    mkc('Pseudo code')+mkc('Python');
   const pre=el_.querySelectorAll('pre'),txt=[D.pc,(D.nohelp?'':HELP)+D.code];
-  pre.forEach((p,i)=>p.textContent=txt[i]);
+  pre.forEach((p,i)=>{if(i){p.textContent=txt[i];return}txt[0].split('\n').forEach(l=>{const d=document.createElement('span');d.className='ln';d.textContent=l||' ';p.appendChild(d)})});
+  const lv=document.createElement('div');lv.id='live';lv.className='live';el_.insertBefore(lv,el_.children[2]);
   el_.querySelectorAll('button[data-c]').forEach((b,i)=>b.onclick=()=>{try{navigator.clipboard.writeText(txt[i]);b.textContent='اتنسخ'}catch(e){b.textContent='انسخ يدوي'}setTimeout(()=>b.textContent='نسخ',1500)});
+}
+let TP={},TP2=null,mode='goal',pend=null,dragK=null;
+const MODES=[['goal','اختار الهدف','دوس على أى عقدة تخليها الهدف.'],['start','اختار البداية','دوس على أى عقدة تخليها نقطة البداية.'],['move','نقل','اسحب أى عقدة وحطها فين ما تحب.'],['add','عقدة جديدة','اكتب اسمها فوق (حروف أو أرقام، لحد 4)، أو سيبه فاضى ويتسمى لوحده، وبعدين دوس على مكان فاضى فى الرسم.'],['link','وصّل','دوس على عقدة وبعدين على عقدة تانية. التكلفة من خانة «تكلفة الخط».'],['del','امسح','دوس على عقدة تمسحها، أو على رقم التكلفة اللى على الخط يتمسح.']];
+const $=id=>document.getElementById(id),hint=$('hint'),md=$('modes');
+MODES.forEach(([k,t,h])=>{const b=document.createElement('button');b.textContent=t;b.setAttribute('aria-pressed',k==mode);
+ b.onclick=()=>{mode=k;pend=null;[...md.children].forEach(x=>x.setAttribute('aria-pressed',x==b));hint.textContent=h;svg.style.cursor=k=='add'?'crosshair':'';svg.style.touchAction=k=='move'?'none':'';draw(last)};md.appendChild(b)});
+hint.textContent=MODES[0][2];
+const keys=()=>Object.keys(P),cl=(v,m)=>Math.max(26,Math.min(m-26,v)),cp=o=>JSON.parse(JSON.stringify(o));
+const pt=e=>{const r=svg.getBoundingClientRect();return[(e.clientX-r.left)*640/r.width,(e.clientY-r.top)*340/r.height]};
+const cost=()=>{const v=parseFloat($('cs').value);return v>0?v:1};
+const autoName=()=>{for(let i=0;i<26;i++){const c=String.fromCharCode(65+i);if(!P[c])return c}let i=1;while(P[''+i])i++;return ''+i};
+function fix(){const k=keys();if(!P[S])S=k[0];if(!P[goal]||goal==S)goal=k.find(x=>x!=S)||S}
+function changed(){rebuildAdj();drawGraph();reset()}
+function nodeClick(k){
+ if(mode=='goal'){if(k!=S){goal=k;reset()}}
+ else if(mode=='start'){if(k!=goal){S=k;reset()}}
+ else if(mode=='link'){
+  if(pend==null){pend=k;nodeEl[k].setAttribute('class','n cur');hint.textContent='تمام، دوس دلوقتى على العقدة التانية.'}
+  else if(pend==k){pend=null;draw(last)}
+  else{const a=pend,w=cost();pend=null;ED=ED.filter(e=>!((e[0]==a&&e[1]==k)||(e[0]==k&&e[1]==a)));ED.push([a,k,w]);changed();hint.textContent='اتوصّلت '+a+' و'+k+' بتكلفة '+w+'.'}}
+ else if(mode=='del'){if(keys().length<=2){hint.textContent='لازم يفضل عقدتين على الأقل.';return}delete P[k];ED=ED.filter(e=>e[0]!=k&&e[1]!=k);changed()}
+}
+function edgeClick(a,b){if(mode=='del'){ED=ED.filter(e=>!(e[0]==a&&e[1]==b));changed()}}
+svg.addEventListener('click',e=>{if(mode!='add'||e.target!==svg)return;
+ const n=$('nm').value.trim()||autoName();
+ if(!/^[A-Za-z0-9\u0600-\u06FF]{1,4}$/.test(n)){hint.textContent='الاسم لازم يكون حروف أو أرقام بس، لحد 4.';return}
+ if(P[n]){hint.textContent='الاسم ده موجود، اكتب اسم تانى.';return}
+ const[x,y]=pt(e);P[n]=[cl(x,640),cl(y,340)];$('nm').value='';changed();hint.textContent='اتضافت العقدة '+n+'. وصّلها بباقى العقد من وضع «وصّل».'});
+svg.addEventListener('pointerdown',e=>{if(mode!='move')return;const g=e.target.closest('g.n');dragK=g?keys().find(k=>nodeEl[k]===g):null;if(dragK)svg.setPointerCapture(e.pointerId)});
+svg.addEventListener('pointermove',e=>{if(!dragK)return;const[x,y]=pt(e);P[dragK]=[cl(x,640),cl(y,340)];drawGraph();draw(last)});
+['pointerup','pointercancel'].forEach(t=>svg.addEventListener(t,()=>{dragK=null}));
+$('bDef').onclick=()=>{P=cp(DP);ED=cp(DE);S='A';goal='J';changed()};
+$('bBlank').onclick=()=>{P={A:[160,170],B:[480,170]};ED=[];S='A';goal='B';changed()};
+function drawTree(s){
+ const T=$('tree');T.innerHTML='';
+ const cls=s.cls||{},pn=s.path||[],tr=[[s.par||{},S,'f','بداية']];
+ if(s.par2)tr.push([s.par2,goal,'b','هدف']);
+ const nodes=[],links=[],nat=(a,b)=>a.localeCompare(b,undefined,{numeric:true});let col=0,mx=0;
+ tr.forEach(([par,root,tg_,lab])=>{
+  const ch={},seen={};
+  Object.keys(par).forEach(k=>{if(par[k]!=null&&k!=root)(ch[par[k]]=ch[par[k]]||[]).push(k)});
+  const lay=(k,d)=>{seen[k]=1;mx=Math.max(mx,d);const xs=[];
+   (ch[k]||[]).sort(nat).forEach(c=>{if(!seen[c]){xs.push(lay(c,d+1));links.push([tg_+k,tg_+c,k,c])}});
+   const x=xs.length?(xs[0]+xs[xs.length-1])/2:col++;nodes.push([tg_+k,k,x,d,k==root?lab:'']);return x};
+  lay(root,0)});
+ const W=Math.max(640,col*46),H=Math.max(160,mx*62+84),pos={};
+ nodes.forEach(([id,k,x,d])=>pos[id]=[(x+.5)*W/Math.max(col,1),40+d*62]);
+ T.setAttribute('viewBox','0 0 '+W+' '+H);
+ const onp=(a,b)=>pn.some((n,i)=>i&&((pn[i-1]==a&&n==b)||(pn[i-1]==b&&n==a)));
+ links.forEach(([i1,i2,a,b])=>{const[x1,y1]=pos[i1],[x2,y2]=pos[i2];
+  el('line',{class:'e'+(onp(a,b)?' p':''),x1,y1,x2,y2},T);
+  const w=(adj[a].find(e=>e[0]==b)||[])[1];
+  if(w!=null){const t=el('text',{class:'ew',x:(x1+x2)/2,y:(y1+y2)/2+4},T);t.textContent=w}});
+ nodes.forEach(([id,k,x,d,lab])=>{const[cx,cy]=pos[id];
+  const g=el('g',{class:'n'+(cls[k]?' '+cls[k]:'')+(pn.includes(k)?' p':'')+(s.cur==k?' cur':'')},T);
+  el('circle',{cx,cy,r:17},g);const t=el('text',{x:cx,y:cy,style:'font-size:'+(k.length>2?11:15)+'px'},g);t.textContent=k;
+  if(lab){const l=el('text',{class:'tg',x:cx,y:cy-26,fill:'var(--mut)'},T);l.textContent=lab}});
+}
+const MAP={
+ bfs:{init:[0,[1,2]],pop:[1,[4]],goal:[2,[5]],exp:[3,[6,7,8,9,10]],fail:[4,[11]]},
+ dfs:{init:[0,[1]],pop:[1,[3,4,5]],goal:[2,[6]],exp:[3,[7,8,9]],fail:[4,[10]]},
+ ids:{init:[0,[1,2]],pop:[1,[6,8,9,10]],goal:[2,[6]],end:[3,[12,1]],fail:[3,[12]]},
+ bi:{init:[0,[1,2]],popF:[1,[5,6,7,8,9]],popB:[2,[5,6,7,8,9]],goal:[4,[10,11]],fail:[3,[12]]},
+ ucs:{init:[0,[1,2]],pop:[1,[4,6]],goal:[2,[7]],exp:[3,[8,9,10]],fail:[4,[11]]}
+};
+function phase(s,p){
+ if(s.path)return 'goal';
+ if(s.cur==null)return s.fr.length?'init':(cur=='ids'?'end':'fail');
+ if(p&&p.cur==s.cur)return 'exp';
+ if(cur=='bi')return s.cls[s.cur]=='d'?'popB':'popF';
+ return 'pop';
+}
+function hl(s){
+ const lv=document.getElementById('live');if(!lv)return;
+ const lis=document.querySelectorAll('#info ol.st li'),lns=document.querySelectorAll('#info .ln');
+ lis.forEach(x=>x.classList.remove('on'));lns.forEach(x=>x.classList.remove('on'));
+ const m=s.ph&&MAP[cur][s.ph];
+ lv.innerHTML='';
+ if(!m){const b=document.createElement('b');b.textContent='شرح لحظى';const d=document.createElement('div');d.textContent='دوس «خطوة» أو «تشغيل». هنا هتلاقى شرح اللى بيحصل لحظة بلحظة، والسطر اللى بيتنفذ فى الكود بيتلون.';lv.append(b,d);return}
+ lis[m[0]]&&lis[m[0]].classList.add('on');m[1].forEach(i=>lns[i]&&lns[i].classList.add('on'));
+ const a=document.createElement('b');a.textContent='دلوقتى: '+DOC[cur].steps[m[0]];
+ const n=document.createElement('div');n.textContent=s.note+(s.path?'  المسار: '+s.path.join(' ← '):'');
+ const c=document.createElement('pre');c.textContent=m[1].map(i=>lns[i]?lns[i].textContent:'').join('\n');
+ lv.append(a,n,c);
 }
 const tabs=document.getElementById('tabs');
 ids_.forEach(k=>{const b=document.createElement('button');b.setAttribute('role','tab');b.textContent=ALG[k].t;
